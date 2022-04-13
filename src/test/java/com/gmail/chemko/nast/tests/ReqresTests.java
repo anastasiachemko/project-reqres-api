@@ -1,19 +1,36 @@
-package com.gmail.chemko.nast;
+package com.gmail.chemko.nast.tests;
 
 import com.gmail.chemko.nast.models.User;
 import com.gmail.chemko.nast.models.LombokUserData;
 import io.restassured.response.Response;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static com.gmail.chemko.nast.spec.Specs.*;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ReqresTests {
+public class ReqresTests extends TestBase {
 
     @Test
+    @DisplayName("Checking email using Groovy")
+    void checkEmailUsingGroovy() {
+        given()
+                .spec(request)
+                .when()
+                .get("/users")
+                .then()
+                .spec(responseSpec200)
+                .log().body()
+                .body("data.findAll{it.email =~/.*?@reqres.in/}.email.flatten()",
+                        hasItems("eve.holt@reqres.in"));
+
+    }
+
+    @Test
+    @DisplayName("Successful registration")
     void successfulRegister() {
 
         User user = new User();
@@ -30,11 +47,12 @@ public class ReqresTests {
                 .log().body()
                 .extract().as(User.class);
 
-        assertEquals(response.getId(), user.getId());
-        assertEquals(user.getToken(), "QpwL5tke4Pnpja7X4");
+        assertEquals("4", response.getId());
+        assertEquals("QpwL5tke4Pnpja7X4", response.getToken());
     }
 
     @Test
+    @DisplayName("Successful authorization")
     void successfulLogin() {
         User user = new User();
         user.setEmail("eve.holt@reqres.in");
@@ -54,6 +72,7 @@ public class ReqresTests {
     }
 
     @Test
+    @DisplayName("Unsuccessful authorization")
     void unsuccessfulLogin() {
         User user = new User();
         user.setEmail("peter@klaven");
@@ -72,6 +91,7 @@ public class ReqresTests {
     }
 
     @Test
+    @DisplayName("Creation of a new user")
     void createUser() {
         User user = new User();
         user.setName("morpheus");
@@ -86,11 +106,12 @@ public class ReqresTests {
                 .statusCode(201)
                 .log().body()
                 .extract().as(User.class);
-        assertEquals(response.getName(), "morpheus");
-        assertEquals(response.getJob(), "leader");
+        assertEquals(response.getName(), user.getName());
+        assertEquals(response.getJob(), user.getJob());
     }
 
     @Test
+    @DisplayName("Updating a user")
     void updateUser() {
         User user = new User();
         user.setName("morpheus");
@@ -105,29 +126,33 @@ public class ReqresTests {
                 .spec(responseSpec200)
                 .log().body()
                 .extract().as(User.class);
-        assertEquals(response.getName(), "morpheus");
-        assertEquals(response.getJob(), "zion resident");
+        assertEquals(response.getName(), user.getName());
+        assertEquals(response.getJob(), user.getJob());
     }
 
     @Test
+    @DisplayName("Search for a user")
     void singleUser() {
 
-        User response = given()
+        LombokUserData response = given()
+                .spec(request)
                 .when()
                 .get("/users/2")
                 .then()
                 .spec(responseSpec200)
                 .log().body()
-                .extract().as(User.class);
+                .extract().as(LombokUserData.class);
 
-        assertEquals(response.getId(), "2");
-        assertEquals(response.getEmail(), "janet.weaver@reqres.in");
+        assertEquals("2", response.getUser().getId());
+        assertEquals("janet.weaver@reqres.in", response.getUser().getEmail());
     }
 
     @Test
+    @DisplayName("Search for a non-existent user")
     void singleUserNotFound() {
 
         Response response = given()
+                .spec(request)
                 .when()
                 .get("/users/23")
                 .then()
