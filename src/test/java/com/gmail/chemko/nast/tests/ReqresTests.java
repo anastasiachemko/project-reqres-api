@@ -26,7 +26,6 @@ public class ReqresTests extends TestBase {
                 .log().body()
                 .body("data.findAll{it.email =~/.*?@reqres.in/}.email.flatten()",
                         hasItems("eve.holt@reqres.in"));
-
     }
 
     @Test
